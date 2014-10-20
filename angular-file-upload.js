@@ -1,5 +1,5 @@
 /*
- angular-file-upload v1.1.1
+ angular-file-upload v1.1.2
  https://github.com/nervgh/angular-file-upload
 */
 (function(angular, factory) {
@@ -344,7 +344,7 @@ module
             FileUploader.prototype._getFilters = function(filters) {
                 if (angular.isUndefined(filters)) return this.filters;
                 if (angular.isArray(filters)) return filters;
-                var names = filters.match(/[^\s,]+/g);
+                var names = filters.split(/\s*,/);
                 return this.filters.filter(function(filter) {
                     return names.indexOf(filter.name) !== -1;
                 }, this);
@@ -560,8 +560,8 @@ module
                     } catch (e) {}
 
                     var xhr = {response: html, status: 200, dummy: true};
+                    var response = that._transformResponse(xhr.response, function () { return null; });
                     var headers = {};
-                    var response = that._transformResponse(xhr.response, function () { return null });
 
                     that._onSuccessItem(item, response, xhr.status, headers);
                     that._onCompleteItem(item, response, xhr.status, headers);
@@ -1166,7 +1166,7 @@ module
              * Event handler
              */
             FileDrop.prototype.onDragLeave = function(event) {
-                if (event.currentTarget !== this.element[0]) return;
+                if (event.target !== this.element[0]) return;
                 this._preventAndStop(event);
                 angular.forEach(this.uploader._directives.over, this._removeOverClass, this);
             };
@@ -1327,6 +1327,5 @@ module
             }
         };
     }])
-
     return module;
 }));
