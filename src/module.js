@@ -382,14 +382,25 @@ module
                 return (status >= 200 && status < 300) || status === 304;
             };
             /**
+             * Returns a function lookup for header values by name
+             * @param {headers} headers objet as returned by _parseHeaders
+             * @returns {Function}
+             * @private
+             */
+            FileUploader.prototype._getHeaderFn = function (headers) {
+                return function (name) {
+                    return headers[angular.lowercase(name)] || null;
+                };
+            };
+            /**
              * Transforms the server response
              * @param {*} response
              * @returns {*}
              * @private
              */
-            FileUploader.prototype._transformResponse = function(response) {
+            FileUploader.prototype._transformResponse = function(response, headersFn) {
                 angular.forEach($http.defaults.transformResponse, function(transformFn) {
-                    response = transformFn(response);
+                    response = transformFn(response, headersFn);
                 });
                 return response;
             };
@@ -451,7 +462,7 @@ module
 
                 xhr.onload = function() {
                     var headers = that._parseHeaders(xhr.getAllResponseHeaders());
-                    var response = that._transformResponse(xhr.response);
+                    var response = that._transformResponse(xhr.response, that._getHeaderFn(headers));
                     var gist = that._isSuccessCode(xhr.status) ? 'Success' : 'Error';
                     var method = '_on' + gist + 'Item';
                     that[method](item, response, xhr.status, headers);
@@ -460,14 +471,14 @@ module
 
                 xhr.onerror = function() {
                     var headers = that._parseHeaders(xhr.getAllResponseHeaders());
-                    var response = that._transformResponse(xhr.response);
+                    var response = that._transformResponse(xhr.response, that._getHeaderFn(headers));
                     that._onErrorItem(item, response, xhr.status, headers);
                     that._onCompleteItem(item, response, xhr.status, headers);
                 };
 
                 xhr.onabort = function() {
                     var headers = that._parseHeaders(xhr.getAllResponseHeaders());
-                    var response = that._transformResponse(xhr.response);
+                    var response = that._transformResponse(xhr.response, that._getHeaderFn(headers));
                     that._onCancelItem(item, response, xhr.status, headers);
                     that._onCompleteItem(item, response, xhr.status, headers);
                 };
@@ -533,7 +544,7 @@ module
                     } catch (e) {}
 
                     var xhr = {response: html, status: 200, dummy: true};
-                    var response = that._transformResponse(xhr.response);
+                    var response = that._transformResponse(xhr.response, function () { return null; });
                     var headers = {};
 
                     that._onSuccessItem(item, response, xhr.status, headers);
